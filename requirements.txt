@@ -1,4 +1,4 @@
-pexpect
-SpeechRecognition
-pyttsx3
-PyAudio
+pexpect>=4.9.0
+SpeechRecognition>=3.10.0
+pyttsx3>=2.90
+PyAudio>=0.2.14

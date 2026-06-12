@@ -4,7 +4,7 @@ Release:        1%{?dist}
 Summary:        Terminal de Linux controlada por voz
 
 License:        MIT
-URL:            https://github.com/TU_USUARIO/terminal-voz
+URL:            https://github.com/cesarlm05/control-terminal-voz
 Source0:        %{name}-%{version}.tar.gz
 
 BuildArch:      noarch
@@ -44,6 +44,6 @@ install -m 0755 terminal_voz.py %{buildroot}%{_bindir}/%{name}
 %{_bindir}/%{name}
 
 %changelog
-* Thu Jun 11 2026 Tu Nombre <tu@correo.com> - 1.0.0-1
+* Thu Jun 11 2026 cesarlm05 <cesarlm05@gmail.com> - 1.0.0-1
 - Version inicial: terminal por voz con shell persistente, lectura en voz
   alta y confirmacion de comandos peligrosos.
