@@ -1,0 +1,4 @@
+pexpect
+SpeechRecognition
+pyttsx3
+PyAudio
