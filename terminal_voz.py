@@ -118,12 +118,31 @@ class TerminalVoz:
         if self.leer_salida:
             _tts_ref = [None]
             def _init_tts():
+                # Suprime el spam de ALSA/JACK que genera pyttsx3 al init.
+                _fn = os.open(os.devnull, os.O_WRONLY)
+                _fo = os.dup(2)
+                os.dup2(_fn, 2)
                 try:
                     eng = pyttsx3.init()
-                    eng.setProperty("rate", 175)
+                    # El proxy de pyttsx3 arranca con _busy=True y no procesa
+                    # la cola hasta runAndWait(). Para que rate/voice tengan
+                    # efecto de inmediato, llamamos al driver directamente.
+                    drv = eng.proxy._driver
+                    drv.setProperty("rate", 175)
+                    voices = eng.getProperty("voices")
+                    es_voice = next(
+                        (v.id for v in voices if "es-419" in v.id),
+                        next((v.id for v in voices if v.id == "roa/es"), None)
+                    )
+                    if es_voice:
+                        drv.setProperty("voice", es_voice)
                     _tts_ref[0] = eng
                 except Exception:
                     pass
+                finally:
+                    os.dup2(_fo, 2)
+                    os.close(_fn)
+                    os.close(_fo)
             t = threading.Thread(target=_init_tts, daemon=True)
             t.start()
             t.join(timeout=5)
