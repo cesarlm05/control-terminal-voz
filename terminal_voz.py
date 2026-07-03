@@ -23,6 +23,7 @@ Tecla ENTER (sin hablar) = escribir el comando a mano (fallback).
 """
 
 import os
+import queue
 import re
 import sys
 import threading
@@ -88,7 +89,7 @@ ALIAS = {
 # PATRONES PELIGROSOS — pre-compilados para no recompilar en cada llamada.
 # ---------------------------------------------------------------------------
 _PATRONES_PELIGROSOS = [re.compile(p) for p in [
-    r"\brm\s+-[a-z]*r[a-z]*f", r"\brm\s+-[a-z]*f[a-z]*r",
+    r"\brm\s+(-[a-zA-Z]*r|--recursive)",    # rm recursivo, con o sin -f
     r"\bmkfs\b", r"\bdd\b", r"\bshred\b",
     r">\s*/dev/sd", r"\bof=/dev/",
     r":\(\)\s*\{",                          # fork bomb
@@ -149,6 +150,11 @@ class TerminalVoz:
             self.tts = _tts_ref[0]
             if self.tts is None:
                 self.leer_salida = False
+            else:
+                # Un único hilo toca el engine: pyttsx3 no es thread-safe y
+                # dos runAndWait() en paralelo lo rompen en silencio.
+                self._tts_cola = queue.Queue()
+                threading.Thread(target=self._tts_worker, daemon=True).start()
 
         # --- Reconocedor de voz ---
         # Se silencia stderr durante la init de PyAudio/ALSA para evitar
@@ -199,18 +205,23 @@ class TerminalVoz:
 
     # -------------------- Voz --------------------
 
-    def hablar(self, texto: str):
-        if not (self.leer_salida and self.tts):
-            return
-        def _speak():
+    def _tts_worker(self):
+        while True:
+            texto, hecho = self._tts_cola.get()
             try:
                 self.tts.say(texto)
                 self.tts.runAndWait()
             except Exception:
                 pass
-        t = threading.Thread(target=_speak, daemon=True)
-        t.start()
-        t.join(timeout=8)   # máx 8 s; si el driver de audio cuelga, se abandona
+            finally:
+                hecho.set()
+
+    def hablar(self, texto: str):
+        if not (self.leer_salida and self.tts):
+            return
+        hecho = threading.Event()
+        self._tts_cola.put((texto, hecho))
+        hecho.wait(timeout=8)   # máx 8 s; si el driver de audio cuelga, se sigue sin voz
 
     def escuchar(self) -> str:
         """Retorna el texto reconocido, o '' si no entendió / hubo error."""

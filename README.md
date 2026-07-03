@@ -31,6 +31,15 @@ Si `pip install PyAudio` falla, asegurate de haber instalado `portaudio19-dev`
 
 ## 3. Ejecutar
 
+La forma más simple (crea un entorno virtual `.venv`, instala las dependencias
+y lanza la app; necesario en Arch/Manjaro y otras distros con PEP 668):
+
+```bash
+./run.sh
+```
+
+O, si manejás el entorno vos mismo:
+
 ```bash
 python3 terminal_voz.py
 ```
